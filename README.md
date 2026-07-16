@@ -84,7 +84,9 @@ When your run breaks, don't search the table of contents. Read the signal, run t
 
 ## Three decisions the book makes for you
 
-Each has a measurement at the root and a threshold at every branch.
+<img src="assets/trees.svg" alt="Three decision trees: should I run RL, my reward is lying, is this speedup free" width="100%" />
+
+Each has a measurement at the root and a threshold at every branch. The three trees come from three different Parts — **data** (blue), **reward** (violet), **systems** (gold) — while red, amber, and green mean the same thing in all of them: stop, fix first, go.
 
 ### 1. Should I be running RL at all?
 
