@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-label="The journey: five RL post-training programs, each ending in a failure that forced the next.">
+  <rect width="1280" height="720" fill="#0B1013"/>
+  <text x="64" y="76" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="2.4">THE JOURNEY · PARTS I–VI</text>
+  <text x="64" y="126" fill="#E8E4DA" font-family="'Space Grotesk',Inter,'Helvetica Neue',Arial,sans-serif" font-size="42" font-weight="500" letter-spacing="-1.4">Five programs. Five pivots.</text>
+  <text x="67" y="158" fill="#6B7A80" font-family="Georgia,'IBM Plex Serif',serif" font-size="17" font-style="italic">Not a topic list. Each program ended in a failure that forced the next one.</text>
+  <line x1="64" y1="182" x2="1216" y2="182" stroke="#22303A" stroke-width="1"/>
+  <text x="500" y="178" fill="#D64545" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="9" letter-spacing="1.6">BROKE</text>
+  <text x="910" y="178" fill="#4FB286" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="9" letter-spacing="1.6">PIVOT</text>
+<line x1="85" y1="230" x2="85" y2="274" stroke="#22303A" stroke-width="1.5"/>
+<path d="M85,280 l-4,-8 h8 z" fill="#22303A"/>
+<circle cx="85" cy="210" r="15" fill="#131B20" stroke="#22303A" stroke-width="1"/>
+<text x="85" y="214" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" text-anchor="middle">01</text>
+<text x="122" y="207" fill="#E8E4DA" font-family="'Space Grotesk',Inter,sans-serif" font-size="20" font-weight="500" letter-spacing="-0.3">Math &amp; GSM8K</text>
+<text x="122" y="226" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="0.8">Part II · Ch 6–24</text>
+<circle cx="500" cy="205" r="3" fill="#D64545"/>
+<text x="512" y="210" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">reward pinned at 0 from cold start</text>
+<circle cx="910" cy="205" r="3" fill="#4FB286"/>
+<text x="922" y="210" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">partial credit + curriculum</text>
+<line x1="85" y1="318" x2="85" y2="362" stroke="#22303A" stroke-width="1.5"/>
+<path d="M85,368 l-4,-8 h8 z" fill="#22303A"/>
+<circle cx="85" cy="298" r="15" fill="#131B20" stroke="#22303A" stroke-width="1"/>
+<text x="85" y="302" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" text-anchor="middle">02</text>
+<text x="122" y="295" fill="#E8E4DA" font-family="'Space Grotesk',Inter,sans-serif" font-size="20" font-weight="500" letter-spacing="-0.3">Search Agent</text>
+<text x="122" y="314" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="0.8">Part III · Ch 25–37</text>
+<circle cx="500" cy="293" r="3" fill="#D64545"/>
+<text x="512" y="298" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">multi-reward got hacked</text>
+<circle cx="910" cy="293" r="3" fill="#4FB286"/>
+<text x="922" y="298" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">correctness-gated reward</text>
+<line x1="85" y1="406" x2="85" y2="450" stroke="#22303A" stroke-width="1.5"/>
+<path d="M85,456 l-4,-8 h8 z" fill="#22303A"/>
+<circle cx="85" cy="386" r="15" fill="#131B20" stroke="#22303A" stroke-width="1"/>
+<text x="85" y="390" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" text-anchor="middle">03</text>
+<text x="122" y="383" fill="#E8E4DA" font-family="'Space Grotesk',Inter,sans-serif" font-size="20" font-weight="500" letter-spacing="-0.3">Entropy &amp; Clip-Cov</text>
+<text x="122" y="402" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="0.8">Part IV · Ch 38–48</text>
+<circle cx="500" cy="381" r="3" fill="#D64545"/>
+<text x="512" y="386" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">entropy collapsed, then exploded</text>
+<circle cx="910" cy="381" r="3" fill="#4FB286"/>
+<text x="922" y="386" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">Clip-Cov</text>
+<line x1="85" y1="494" x2="85" y2="538" stroke="#22303A" stroke-width="1.5"/>
+<path d="M85,544 l-4,-8 h8 z" fill="#22303A"/>
+<circle cx="85" cy="474" r="15" fill="#131B20" stroke="#22303A" stroke-width="1"/>
+<text x="85" y="478" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" text-anchor="middle">04</text>
+<text x="122" y="471" fill="#E8E4DA" font-family="'Space Grotesk',Inter,sans-serif" font-size="20" font-weight="500" letter-spacing="-0.3">MoE &amp; GSPO</text>
+<text x="122" y="490" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="0.8">Part V · Ch 49–59</text>
+<circle cx="500" cy="469" r="3" fill="#D64545"/>
+<text x="512" y="474" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">routing drift, ratio fragility</text>
+<circle cx="910" cy="469" r="3" fill="#4FB286"/>
+<text x="922" y="474" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">sequence-level ratios</text>
+<circle cx="85" cy="562" r="15" fill="#131B20" stroke="#22303A" stroke-width="1"/>
+<text x="85" y="566" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="11" text-anchor="middle">05</text>
+<text x="122" y="559" fill="#E8E4DA" font-family="'Space Grotesk',Inter,sans-serif" font-size="20" font-weight="500" letter-spacing="-0.3">SWE-bench → OPD</text>
+<text x="122" y="578" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="0.8">Part VI · Ch 60–69</text>
+<circle cx="500" cy="557" r="3" fill="#D64545"/>
+<text x="512" y="562" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">sparse reward hit a capacity wall</text>
+<circle cx="910" cy="557" r="3" fill="#4FB286"/>
+<text x="922" y="562" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="14.5" opacity="0.92">on-policy distillation</text>
+
+  <line x1="64" y1="624" x2="1216" y2="624" stroke="#22303A" stroke-width="1"/>
+  <text x="64" y="660" fill="#E8E4DA" font-family="Georgia,'IBM Plex Serif',serif" font-size="17">In RL post-training, the failures are the curriculum.<tspan fill="#6B7A80" dx="8">Science publishes what worked. This is what didn't.</tspan></text>
+  <text x="64" y="690" fill="#6B7A80" font-family="ui-monospace,'SF Mono',Menlo,monospace" font-size="10.5" letter-spacing="1.4">WHAT BROKE &amp; WHY · LUV VERMA, PhD · DOI 10.5281/zenodo.21115798</text>
+</svg>

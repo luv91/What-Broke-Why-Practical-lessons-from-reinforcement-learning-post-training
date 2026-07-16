@@ -1,3 +1,5 @@
+<img src="assets/hero.svg" alt="What Broke & Why — policy entropy collapses, explodes, then damps under Clip-Cov" width="100%" />
+
 # What Broke & Why
 
 ### Practical Lessons from Reinforcement Learning Post-Training
@@ -48,6 +50,8 @@ read once, in order      read after the runs     return when a run breaks
 ---
 
 ## The journey: five programs, five pivots
+
+<img src="assets/journey.svg" alt="Five programs, each ending in a failure that forced the next" width="100%" />
 
 Each program ended with a failure that forced the next one.
 
