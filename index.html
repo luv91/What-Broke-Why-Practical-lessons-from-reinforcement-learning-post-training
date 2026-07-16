@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>What Broke &amp; Why — Luv Verma, PhD</title>
+<meta name="description" content="Practical lessons from reinforcement learning post-training. 648 pages, 157 chapters, told through the runs that broke. Free under CC BY 4.0." />
+<meta property="og:title" content="What Broke &amp; Why" />
+<meta property="og:description" content="Practical lessons from reinforcement learning post-training. Told through the failures instead of around them." />
+<meta property="og:type" content="book" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<style>
+  html, body { margin: 0; background: #0B1013; }
+  #root { min-height: 100vh; }
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useRef } = React;
+
+// ─────────────────────────────────────────────────────────────
+//  What Broke & Why — landing page
+//  Luv Verma, PhD · 648 pages · 157 chapters · CC BY 4.0
+// ─────────────────────────────────────────────────────────────
+
+const DOI = "10.5281/zenodo.21115798";
+const DOI_URL = "https://doi.org/10.5281/zenodo.21115798";
+const REPO = "https://github.com/luv91/What-Broke-Why-Practical-lessons-from-reinforcement-learning-post-training";
+const GH_PROFILE = "https://github.com/luv91";
+
+const C = {
+  ink: "#0B1013",
+  ink2: "#131B20",
+  paper: "#E8E4DA",
+  held: "#4FB286",
+  broke: "#D64545",
+  warn: "#F2A65A",
+  gray: "#6B7A80",
+  line: "#22303A",
+};
+
+// ── the actual Part IV entropy story: collapse → explosion → damped ──
+function entropyTrace(t) {
+  const pts = [];
+  for (let i = 0; i <= 400; i++) {
+    const x = i / 400;
+    let y;
+    if (x < 0.22) y = 0.72 - 0.55 * Math.pow(x / 0.22, 1.7); // collapse
+    else if (x < 0.42) {
+      const u = (x - 0.22) / 0.2;
+      y = 0.17 + 0.72 * Math.pow(u, 2.2); // explosion
+    } else {
+      const u = (x - 0.42) / 0.58;
+      y = 0.46 + 0.42 * Math.exp(-4.2 * u) * Math.cos(11 * u); // damped
+    }
+    y += Math.sin(i * 2.7) * 0.006;
+    pts.push([x, Math.max(0.03, Math.min(0.95, y))]);
+  }
+  return pts.slice(0, Math.max(2, Math.floor(pts.length * t)));
+}
+
+function EntropyHero() {
+  const [t, setT] = useState(0);
+  const raf = useRef();
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { setT(1); return; }
+    let start;
+    const tick = (ts) => {
+      if (!start) start = ts;
+      const p = Math.min(1, (ts - start) / 3800);
+      setT(p);
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, []);
+
+  const W = 900, H = 300, PAD = 8;
+  const pts = entropyTrace(t);
+  const d = pts.map(([x, y], i) =>
+    `${i === 0 ? "M" : "L"}${PAD + x * (W - PAD * 2)},${H - PAD - y * (H - PAD * 2)}`
+  ).join(" ");
+  const head = pts[pts.length - 1];
+
+  const zones = [
+    { x: 0.0, w: 0.22, label: "collapse", c: C.broke },
+    { x: 0.22, w: 0.2, label: "explosion", c: C.warn },
+    { x: 0.42, w: 0.58, label: "clip-cov · damped", c: C.held },
+  ];
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }} aria-label="Entropy trace: collapse, explosion, then damped oscillation under Clip-Cov">
+        {[0.25, 0.5, 0.75].map((g) => (
+          <line key={g} x1={PAD} x2={W - PAD} y1={H - PAD - g * (H - PAD * 2)} y2={H - PAD - g * (H - PAD * 2)}
+            stroke={C.line} strokeWidth="1" strokeDasharray="2 6" />
+        ))}
+        {zones.map((z) => {
+          const zx = PAD + z.x * (W - PAD * 2);
+          const zw = z.w * (W - PAD * 2);
+          const on = t > z.x + 0.02;
+          return (
+            <g key={z.label} opacity={on ? 1 : 0} style={{ transition: "opacity .5s" }}>
+              <rect x={zx} y={PAD} width={zw} height={H - PAD * 2} fill={z.c} opacity="0.05" />
+              <line x1={zx} x2={zx} y1={PAD} y2={H - PAD} stroke={z.c} strokeWidth="1" opacity="0.3" />
+              <text x={zx + 8} y={PAD + 16} fill={z.c} fontSize="11"
+                fontFamily="'IBM Plex Mono',monospace" letterSpacing="0.08em">{z.label}</text>
+            </g>
+          );
+        })}
+        <path d={d} fill="none" stroke={C.paper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {head && (
+          <g>
+            <circle cx={PAD + head[0] * (W - PAD * 2)} cy={H - PAD - head[1] * (H - PAD * 2)} r="4" fill={C.paper} />
+            <circle cx={PAD + head[0] * (W - PAD * 2)} cy={H - PAD - head[1] * (H - PAD * 2)} r="9"
+              fill="none" stroke={C.paper} strokeWidth="1" opacity="0.35" />
+          </g>
+        )}
+        <text x={PAD} y={H - PAD + 2} fill={C.gray} fontSize="10"
+          fontFamily="'IBM Plex Mono',monospace" letterSpacing="0.1em">POLICY ENTROPY · TRAINING STEP →</text>
+      </svg>
+    </div>
+  );
+}
+
+// ── the five programs: a real sequence, each break forced the next ──
+const JOURNEY = [
+  { n: "01", part: "II", title: "Math & GSM8K", ch: "Ch 6–24", sub: "the first verifiable RL run",
+    broke: "reward pinned at 0 from cold start", fix: "partial credit + curriculum" },
+  { n: "02", part: "III", title: "Search Agent", ch: "Ch 25–37", sub: "reasoning with live tools",
+    broke: "multi-reward got hacked", fix: "correctness-gated reward" },
+  { n: "03", part: "IV", title: "Entropy & Clip-Cov", ch: "Ch 38–48", sub: "stability under RL pressure",
+    broke: "entropy collapsed, then exploded", fix: "Clip-Cov" },
+  { n: "04", part: "V", title: "MoE & GSPO", ch: "Ch 49–59", sub: "scaling up the model",
+    broke: "routing drift, ratio fragility", fix: "sequence-level importance sampling" },
+  { n: "05", part: "VI", title: "SWE-bench → OPD", ch: "Ch 60–69", sub: "when outcome RL isn't enough",
+    broke: "sparse reward hit a capacity wall", fix: "on-policy distillation" },
+];
+
+function Journey() {
+  const [open, setOpen] = useState(null);
+  return (
+    <div style={{ borderTop: `1px solid ${C.line}` }}>
+      {JOURNEY.map((p, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={p.n} style={{ borderBottom: `1px solid ${C.line}` }}>
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              aria-expanded={isOpen}
+              style={{
+                width: "100%", background: "none", border: "none", cursor: "pointer",
+                padding: "22px 4px", display: "grid",
+                gridTemplateColumns: "48px 1fr auto", gap: 16, alignItems: "baseline",
+                textAlign: "left", color: C.paper, fontFamily: "inherit",
+              }}
+            >
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: C.gray, letterSpacing: "0.1em" }}>{p.n}</span>
+              <span>
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(18px,2.4vw,26px)", fontWeight: 500, letterSpacing: "-0.01em" }}>{p.title}</span>
+                <span style={{ display: "block", fontSize: 13, color: C.gray, marginTop: 5, fontFamily: "'IBM Plex Serif',serif" }}>{p.sub}</span>
+              </span>
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: C.gray, whiteSpace: "nowrap" }}>
+                {p.ch} <span style={{ opacity: 0.5, marginLeft: 8 }}>{isOpen ? "−" : "+"}</span>
+              </span>
+            </button>
+            <div style={{
+              maxHeight: isOpen ? 200 : 0, overflow: "hidden",
+              transition: "max-height .35s ease", paddingLeft: 64,
+            }}>
+              <div style={{ paddingBottom: 24, display: "flex", flexWrap: "wrap", gap: 28 }}>
+                <div style={{ minWidth: 220 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: C.broke, letterSpacing: "0.14em", marginBottom: 6 }}>BROKE</div>
+                  <div style={{ fontFamily: "'IBM Plex Serif',serif", fontSize: 15, color: C.paper, opacity: 0.85 }}>{p.broke}</div>
+                </div>
+                <div style={{ minWidth: 220 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: C.held, letterSpacing: "0.14em", marginBottom: 6 }}>PIVOT</div>
+                  <div style={{ fontFamily: "'IBM Plex Serif',serif", fontSize: 15, color: C.paper, opacity: 0.85 }}>{p.fix}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── the symptom router: the book's actual diagnostic entry point ──
+const ROUTER = [
+  { sig: "reward = 0", check: "group variance, extractor, format reward", go: "Ch 11–13 · Cold Start / Partial Credit" },
+  { sig: "reward up, eval down", check: "reward components, behavioral audit", go: "Ch 31–32 · Correctness Gate" },
+  { sig: "entropy collapses, then explodes", check: "entropy, reward_std, length", go: "Part IV · Clip-Cov (Ch 42–43)" },
+  { sig: "solve-rate flat, reward nonzero", check: "is the task reachable? reward sparsity", go: "Ch 65–66 · OPD Recipe" },
+  { sig: "MoE ratios spike, routing drifts", check: "ratio_max, routing entropy, expert load", go: "Ch 51–54 · GSPO / Routing" },
+  { sig: "eval changed, won't reproduce", check: "sample size, decoding, extractor", go: "Part IX · Evaluation Discipline" },
+  { sig: "outputs changed after speedup", check: "KL to BF16 rollout, router flips", go: "Ch 130, 134 · Rollout Contract" },
+  { sig: "OOM, or only one GPU", check: "resident weights, KV cache, sharding", go: "Part XV · Hardware" },
+];
+
+function Router() {
+  const [q, setQ] = useState("");
+  const hits = ROUTER.filter(
+    (r) => (r.sig + r.check + r.go).toLowerCase().includes(q.toLowerCase())
+  );
+  return (
+    <div>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Type what your dashboard is showing…"
+        aria-label="Search symptoms"
+        style={{
+          width: "100%", background: C.ink2, border: `1px solid ${C.line}`,
+          color: C.paper, padding: "14px 16px", fontSize: 14,
+          fontFamily: "'IBM Plex Mono',monospace", outline: "none", marginBottom: 4,
+        }}
+        onFocus={(e) => (e.target.style.borderColor = C.held)}
+        onBlur={(e) => (e.target.style.borderColor = C.line)}
+      />
+      <div style={{ display: "grid", gap: 1, background: C.line, border: `1px solid ${C.line}` }}>
+        {hits.map((r) => (
+          <div key={r.sig} style={{
+            background: C.ink, padding: "16px 16px",
+            display: "grid", gridTemplateColumns: "minmax(180px,1.1fr) minmax(160px,1fr) minmax(150px,0.9fr)",
+            gap: 16, alignItems: "center",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 6, height: 6, borderRadius: 99, background: C.broke, flexShrink: 0 }} />
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, color: C.paper }}>{r.sig}</span>
+            </div>
+            <div style={{ fontFamily: "'IBM Plex Serif',serif", fontSize: 13, color: C.gray }}>{r.check}</div>
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: C.held, textAlign: "right" }}>{r.go}</div>
+          </div>
+        ))}
+        {hits.length === 0 && (
+          <div style={{ background: C.ink, padding: 20, fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, color: C.gray }}>
+            No symptom matches that. The full catalog lives in Part XII — every failure mode, with the fix.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const DOCTRINE = [
+  ["No variance, no RL.", "Ch 11–13"],
+  ["Auxiliary rewards must be correctness-gated.", "Ch 31–32"],
+  ["Numbers need a canonical eval.", "Ch 37, 85"],
+  ["Entropy needs damped feedback, not a global push.", "Ch 42–43"],
+  ["Sequence-level ratios are the safe default at scale.", "Ch 51–54"],
+  ["If RL can't reach reward, change the signal.", "Ch 65–66"],
+  ["Speedups need an inference-correctness contract.", "Ch 130, 134"],
+  ["An implementation wall is not an algorithmic law.", "Ch 152"],
+];
+
+const VERDICT = {
+  stop:   { c: C.broke, label: "STOP" },
+  fix:    { c: C.warn,  label: "FIX FIRST" },
+  go:     { c: C.held,  label: "GO" },
+};
+
+// ── TREE 1 · Should you be running RL at all? (Table M.1) ──
+const TREE_RL = {
+  id: "root",
+  q: "Measure base success on your task first — pass@1, before any training, on a real eval.",
+  hint: "This is the one number that decides everything downstream. Run it before you write a reward function.",
+  opts: [
+    { label: "~0%", detail: "the model never gets it right", to: "zero" },
+    { label: "20–80%", detail: "sometimes right, sometimes wrong", to: "band" },
+    { label: "~100%", detail: "already saturated", to: "sat" },
+  ],
+  nodes: {
+    zero: {
+      verdict: "stop",
+      title: "Too hard. RL has nothing to work with.",
+      body: "Every rollout in the group scores zero, so every advantage is zero, so the gradient is zero. You will watch a flat line for a week.",
+      rule: "No variance, no RL.",
+      next: ["Cold-start with supervised fine-tuning first — Ch 7", "Or change the task until the base model can sometimes succeed", "Or distill from a stronger teacher — Ch 68–69"],
+      ch: "Ch 11–13",
+    },
+    band: {
+      verdict: "go",
+      title: "This is the band. RL helps here.",
+      body: "Groups contain both successes and failures, so the advantage is informative and the gradient points somewhere real. RL sharpens what the model can already sometimes do — it does not add new capability.",
+      rule: "RL sharpens. It does not expand.",
+      next: ["Proceed to reward design — Part VIII", "Set your variance budget before you claim anything — Ch 87"],
+      ch: "Table M.1 · Part VII",
+    },
+    sat: {
+      verdict: "stop",
+      title: "Saturated. There is no headroom to sharpen.",
+      body: "The model already succeeds. RL can only sharpen an existing capability, and this one is as sharp as the eval can see.",
+      rule: "Sharpen-not-expand cuts both ways.",
+      next: ["Evaluate only — don't train", "Find a harder eval that still lands in the 20–80% band"],
+      ch: "Table M.1",
+    },
+  },
+};
+
+// ── TREE 2 · Reward misbehaving? (Ch 31–32, the gate) ──
+const TREE_REWARD = {
+  id: "root",
+  q: "What is your reward curve doing, relative to your held-out eval?",
+  hint: "The failure mode is legible from the relationship between the two curves — not from either one alone.",
+  opts: [
+    { label: "Reward pinned at 0", detail: "flat from the start", to: "zero" },
+    { label: "Reward up, eval down", detail: "the curves diverge", to: "hacked" },
+    { label: "Reward up, eval flat", detail: "plateau", to: "plateau" },
+  ],
+  nodes: {
+    zero: {
+      verdict: "fix",
+      title: "Cold start. Check variance before you touch the reward.",
+      body: "Three things produce this, in order of how often: the extractor never matches your model's output format, the reward is binary on a task the model never solves, or every rollout in the group is identical.",
+      rule: "Check the extractor first. It's the extractor more often than it's the algorithm.",
+      next: ["Log raw rollouts and eyeball the extraction — Ch 10", "Add partial credit so near-misses score — Ch 13", "Add a format reward to bootstrap — Ch 11"],
+      ch: "Ch 11–13",
+    },
+    hacked: {
+      verdict: "fix",
+      title: "Reward hacking. Your auxiliaries are buying points without correctness.",
+      body: "With a linear sum of channels — F1, grounding, cost, redundancy, format — the model discovers it can bank the behavioral points while getting the answer wrong. Reward climbs. Exact match falls.",
+      rule: "Auxiliary rewards must be correctness-gated.",
+      gate: true,
+      next: ["Gate every auxiliary behind correctness — Ch 32", "Run a behavioral audit, not just an accuracy check — Ch 38"],
+      ch: "Ch 31–32",
+    },
+    plateau: {
+      verdict: "fix",
+      title: "Single-reward plateau. The signal has no gradient left.",
+      body: "A single correctness-only reward gives the model nothing to climb once it plateaus. Exact match is all-or-nothing, so there's no direction to move in.",
+      rule: "Correctness-only plateaus. Shaped risks hacking. Gate the shaping.",
+      next: ["Move to F1 or another graded reward — Ch 27", "Add gated behavioral channels — Ch 30", "Check the task is reachable at all — Ch 65–66"],
+      ch: "Ch 26–30",
+    },
+  },
+};
+
+// the real Table 32.1 values
+const GATE_VALUES = [
+  ["0.0", "0.000", "closed", C.broke],
+  ["0.1", "0.052", "barely open", C.broke],
+  ["0.3", "0.172", "weak", C.warn],
+  ["0.5", "0.311", "moderate", C.warn],
+  ["0.7", "0.468", "strong", C.held],
+  ["1.0", "0.731", "near-full", C.held],
+];
+
+function GateTable() {
+  return (
+    <div style={{ marginTop: 20, border: `1px solid ${C.line}` }}>
+      <div style={{
+        padding: "10px 14px", borderBottom: `1px solid ${C.line}`, background: C.ink,
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: 10,
+        letterSpacing: "0.14em", color: C.gray,
+      }}>
+        THE GATE · f1 · σ(f1) — Table 32.1
+      </div>
+      {GATE_VALUES.map(([f1, val, state, col], i) => (
+        <div key={f1} style={{
+          display: "grid", gridTemplateColumns: "60px 70px 1fr 90px",
+          gap: 10, alignItems: "center", padding: "9px 14px",
+          borderBottom: i === GATE_VALUES.length - 1 ? "none" : `1px solid ${C.line}`,
+          background: C.ink2,
+        }}>
+          <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: C.gray }}>F1 {f1}</span>
+          <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: C.paper }}>{val}</span>
+          <span style={{ height: 4, background: C.line, position: "relative", borderRadius: 2 }}>
+            <span style={{
+              position: "absolute", left: 0, top: 0, bottom: 0,
+              width: `${parseFloat(val) * 100 / 0.731 * 0.98}%`,
+              background: col, borderRadius: 2,
+            }} />
+          </span>
+          <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: col, textAlign: "right" }}>{state}</span>
+        </div>
+      ))}
+      <div style={{
+        padding: "12px 14px", borderTop: `1px solid ${C.line}`, background: C.ink,
+        fontFamily: "'IBM Plex Serif',serif", fontSize: 13, color: C.gray, lineHeight: 1.6,
+      }}>
+        Wrong answer → gate closed → behavioral points worth nothing, no matter how
+        well-grounded or efficient. The road to higher reward now runs through being right.
+      </div>
+    </div>
+  );
+}
+
+// ── TREE 3 · Is this speedup free? (Ch 136, the Correctness Contract) ──
+const TREE_ROLLOUT = {
+  id: "root",
+  q: "Classify the acceleration before you benchmark it. What does it do to the numbers?",
+  hint: "Serving asks 'is it faster?'. RL must also ask: is the policy that generated these rollouts still the policy I'm training?",
+  opts: [
+    { label: "Safe-by-construction", detail: "same computation, faster path", to: "safe" },
+    { label: "Exact", detail: "claims bit-identical at matched seed", to: "exact" },
+    { label: "Lossy", detail: "quantized KV or weights", to: "lossy" },
+  ],
+  nodes: {
+    safe: {
+      verdict: "go",
+      title: "Gate B only.",
+      body: "It cannot move the distribution, because it performs the same computation. All you owe it is proof that it's actually faster end-to-end — measured over the real training loop, not a microbenchmark.",
+      gates: [["B", "real step wall-clock", true]],
+      rule: "Speculative decoding lives here. Gate B only.",
+      next: ["Measure end-to-end, including weight-sync and batching", "Some 'faster' kernels lose the win once those are counted"],
+      ch: "Ch 136, 137",
+    },
+    exact: {
+      verdict: "go",
+      title: "Gate B, plus prove the claim.",
+      body: "Bit-identical is a claim, not a fact. Verify outputs really are identical at a matched seed, then measure the speed.",
+      gates: [["B", "real step wall-clock", true], ["verify", "outputs identical at matched seed", true]],
+      rule: "Prefix caching lives here — but its win is entirely access-pattern dependent: 0% on a grouped batch, 26% on a reused long prefix.",
+      next: ["Verify identity before trusting the class", "Enable it only at the seam where the prefix is actually reused — Ch 139"],
+      ch: "Ch 136, 139",
+    },
+    lossy: {
+      verdict: "stop",
+      title: "All three gates. This is where things die.",
+      body: "Its entire risk is a distribution shift the output text hides. A serving-style '97% accuracy recovery' claim is a FAILING Gate A in the RL setting — the contract is what makes that visible.",
+      gates: [
+        ["A", "per-token KL < 0.05 nats, matched seed/T", false],
+        ["B", "real step wall-clock", false],
+        ["C", "500-sample held-out eval after a short RL run", false],
+      ],
+      rule: "FP8-KV failed Gate A by 152× — KL of 7.61 against a bar of 0.05, with ~40% of tokens disagreeing at matched seed and T=0.",
+      exhibit: true,
+      next: ["Run Gate A first — it's cheap and it's usually where you stop", "FP8 weights are fine; FP8 KV is poison. The cache is re-read lossily on every attention op, so error compounds — Ch 140", "W8A8 is the safe rollout quant — Ch 141"],
+      ch: "Ch 136, 140",
+    },
+  },
+};
+
+function FP8Exhibit() {
+  return (
+    <div style={{
+      marginTop: 20, border: `1px solid ${C.broke}40`, background: `${C.broke}0A`,
+      padding: "18px 20px",
+    }}>
+      <div style={{
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: 10,
+        letterSpacing: "0.14em", color: C.broke, marginBottom: 14,
+      }}>THE FLAGSHIP FAILURE · FP8-KV ON QWEN3-14B</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 18 }}>
+        {[
+          ["7.61", "measured KL", C.broke],
+          ["0.05", "the bar", C.gray],
+          ["152×", "over", C.broke],
+          ["~40%", "tokens disagree", C.broke],
+          ["0.97×", "speed — slower", C.warn],
+        ].map(([v, l, col]) => (
+          <div key={l}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, fontWeight: 500, color: col }}>{v}</div>
+            <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 9, color: C.gray, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 3 }}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <p style={{
+        fontFamily: "'IBM Plex Serif',serif", fontSize: 13, color: C.gray,
+        lineHeight: 1.65, margin: "16px 0 0", maxWidth: 640,
+      }}>
+        There was no point running Gate C. Nearly half its tokens came from a different
+        policy than the one the trainer updates, which invalidates the importance ratio at
+        the heart of the update — and it wasn't even faster.
+      </p>
+    </div>
+  );
+}
+
+// ── the tree renderer ──
+function Tree({ tree, accent }) {
+  const [picked, setPicked] = useState(null);
+  const node = picked ? tree.nodes[picked] : null;
+  const v = node ? VERDICT[node.verdict] : null;
+
+  return (
+    <div>
+      {/* the question */}
+      <div style={{
+        border: `1px solid ${C.line}`, borderLeft: `2px solid ${accent}`,
+        background: C.ink2, padding: "18px 20px", marginBottom: 18,
+      }}>
+        <div style={{
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 17, fontWeight: 500,
+          color: C.paper, lineHeight: 1.45, marginBottom: 8,
+        }}>{tree.q}</div>
+        <div style={{
+          fontFamily: "'IBM Plex Serif',serif", fontSize: 13, color: C.gray,
+          lineHeight: 1.6, maxWidth: 620,
+        }}>{tree.hint}</div>
+      </div>
+
+      {/* the branches */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10 }}>
+        {tree.opts.map((o) => {
+          const on = picked === o.to;
+          const oc = VERDICT[tree.nodes[o.to].verdict].c;
+          return (
+            <button
+              key={o.to}
+              onClick={() => setPicked(on ? null : o.to)}
+              aria-pressed={on}
+              style={{
+                background: on ? `${oc}12` : C.ink,
+                border: `1px solid ${on ? oc : C.line}`,
+                padding: "16px 16px", cursor: "pointer", textAlign: "left",
+                fontFamily: "inherit", transition: "all .18s",
+              }}
+              onMouseEnter={(e) => { if (!on) e.currentTarget.style.borderColor = `${oc}70`; }}
+              onMouseLeave={(e) => { if (!on) e.currentTarget.style.borderColor = C.line; }}
+            >
+              <div style={{
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 13,
+                color: on ? oc : C.paper, marginBottom: 6, fontWeight: 500,
+              }}>{o.label}</div>
+              <div style={{
+                fontFamily: "'IBM Plex Serif',serif", fontSize: 12,
+                color: C.gray, lineHeight: 1.5,
+              }}>{o.detail}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* the verdict */}
+      <div style={{
+        maxHeight: node ? 1400 : 0, overflow: "hidden",
+        transition: "max-height .4s ease",
+      }}>
+        {node && (
+          <div style={{ marginTop: 18, border: `1px solid ${C.line}`, borderTop: `2px solid ${v.c}` }}>
+            <div style={{ padding: "20px 22px" }}>
+              <div style={{
+                display: "inline-block", fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 9, letterSpacing: "0.16em", color: C.ink, background: v.c,
+                padding: "3px 8px", marginBottom: 14,
+              }}>{v.label}</div>
+
+              <div style={{
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 19, fontWeight: 500,
+                color: C.paper, marginBottom: 10, letterSpacing: "-0.01em",
+              }}>{node.title}</div>
+
+              <p style={{
+                fontFamily: "'IBM Plex Serif',serif", fontSize: 15, color: C.gray,
+                lineHeight: 1.65, margin: "0 0 18px", maxWidth: 640,
+              }}>{node.body}</p>
+
+              {/* gates, when the node has them */}
+              {node.gates && (
+                <div style={{ display: "grid", gap: 1, background: C.line, border: `1px solid ${C.line}`, marginBottom: 18 }}>
+                  {node.gates.map(([g, desc, pass]) => (
+                    <div key={g} style={{
+                      background: C.ink2, padding: "12px 14px",
+                      display: "flex", gap: 12, alignItems: "center",
+                    }}>
+                      <span style={{
+                        fontFamily: "'IBM Plex Mono',monospace", fontSize: 11,
+                        color: C.ink, background: pass ? C.held : C.broke,
+                        padding: "2px 7px", flexShrink: 0, minWidth: 22, textAlign: "center",
+                      }}>{g}</span>
+                      <span style={{
+                        fontFamily: "'IBM Plex Serif',serif", fontSize: 13, color: C.paper,
+                      }}>{desc}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {node.gate && <GateTable />}
+              {node.exhibit && <FP8Exhibit />}
+
+              {/* the rule */}
+              <div style={{
+                borderLeft: `2px solid ${v.c}`, paddingLeft: 14, margin: "18px 0",
+              }}>
+                <div style={{
+                  fontFamily: "'IBM Plex Mono',monospace", fontSize: 9,
+                  letterSpacing: "0.14em", color: v.c, marginBottom: 6,
+                }}>THE RULE</div>
+                <div style={{
+                  fontFamily: "'IBM Plex Serif',serif", fontSize: 15, fontStyle: "italic",
+                  color: C.paper, lineHeight: 1.55, maxWidth: 620,
+                }}>{node.rule}</div>
+              </div>
+
+              {/* what to do */}
+              <div style={{
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 9,
+                letterSpacing: "0.14em", color: C.gray, margin: "18px 0 10px",
+              }}>DO THIS NEXT</div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {node.next.map((n) => (
+                  <li key={n} style={{
+                    fontFamily: "'IBM Plex Serif',serif", fontSize: 14,
+                    color: C.gray, lineHeight: 1.6, marginBottom: 7,
+                  }}>{n}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div style={{
+              borderTop: `1px solid ${C.line}`, padding: "11px 22px",
+              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+            }}>
+              <span style={{
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: v.c,
+              }}>{node.ch}</span>
+              <button onClick={() => setPicked(null)} style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: C.gray,
+              }}>reset ×</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const TREES = [
+  { key: "rl",      tab: "Should I run RL?",   src: "Table M.1 · Appendix M", tree: TREE_RL,      accent: C.held },
+  { key: "reward",  tab: "My reward is lying", src: "Ch 31–32 · Part III",    tree: TREE_REWARD,  accent: C.warn },
+  { key: "rollout", tab: "Is this speedup free?", src: "Ch 136 · Part XIV",   tree: TREE_ROLLOUT, accent: C.broke },
+];
+
+function DecisionTrees() {
+  const [tab, setTab] = useState("rl");
+  const active = TREES.find((t) => t.key === tab);
+
+  return (
+    <section style={{ maxWidth: 1080, margin: "0 auto", padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+      <div style={{
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, letterSpacing: "0.18em",
+        color: C.gray, textTransform: "uppercase", marginBottom: 18,
+      }}>The decision matrices · Appendix M</div>
+
+      <h2 style={{
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(26px,3.4vw,40px)",
+        fontWeight: 500, letterSpacing: "-0.02em", color: C.paper, margin: "0 0 14px",
+      }}>Three decisions the book makes for you.</h2>
+
+      <p style={{
+        fontFamily: "'IBM Plex Serif',serif", fontSize: 16, lineHeight: 1.65,
+        color: C.gray, maxWidth: 620, margin: "0 0 36px",
+      }}>
+        Each one has a measurement at the root and a threshold at every branch. No taste,
+        no vibes — every leaf traces to a chapter and a number that came out of a run.
+      </p>
+
+      {/* tabs */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 0, borderBottom: `1px solid ${C.line}`, marginBottom: 28 }}>
+        {TREES.map((t) => {
+          const on = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              aria-pressed={on}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                padding: "12px 18px 14px", textAlign: "left",
+                borderBottom: `2px solid ${on ? t.accent : "transparent"}`,
+                marginBottom: -1, fontFamily: "inherit",
+              }}
+            >
+              <div style={{
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 15,
+                fontWeight: 500, color: on ? C.paper : C.gray, marginBottom: 3,
+              }}>{t.tab}</div>
+              <div style={{
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 10,
+                color: on ? t.accent : C.line,
+              }}>{t.src}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <Tree key={active.key} tree={active.tree} accent={active.accent} />
+    </section>
+  );
+}
+
+function BookLanding() {
+  const [copied, setCopied] = useState(false);
+  const cite = `Verma, Luv. What Broke & Why: Practical Lessons from Reinforcement Learning Post-Training. First edition, version 1.0. Zenodo, 2026. DOI: ${DOI}.`;
+
+  const copyCite = async () => {
+    try {
+      await navigator.clipboard.writeText(cite);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  };
+
+  const S = {
+    section: { maxWidth: 1080, margin: "0 auto", padding: "0 24px" },
+    eyebrow: {
+      fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, letterSpacing: "0.18em",
+      color: C.gray, textTransform: "uppercase", marginBottom: 18,
+    },
+    h2: {
+      fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(26px,3.4vw,40px)",
+      fontWeight: 500, letterSpacing: "-0.02em", color: C.paper, margin: "0 0 14px",
+    },
+    body: {
+      fontFamily: "'IBM Plex Serif',serif", fontSize: 16, lineHeight: 1.65,
+      color: C.gray, maxWidth: 620, margin: 0,
+    },
+  };
+
+  return (
+    <div style={{ background: C.ink, color: C.paper, minHeight: "100vh" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        a { color: inherit; }
+        button:focus-visible, a:focus-visible, input:focus-visible {
+          outline: 2px solid ${C.held}; outline-offset: 3px;
+        }
+        @media (max-width: 720px) {
+          .router-row { grid-template-columns: 1fr !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation: none !important; transition: none !important; }
+        }
+      `}</style>
+
+      {/* ── HERO ── */}
+      <header style={{ ...S.section, paddingTop: 72, paddingBottom: 56 }}>
+        <div style={S.eyebrow}>Luv Verma, PhD · First edition v1.0 · July 2026</div>
+        <h1 style={{
+          fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+          fontSize: "clamp(40px,7.5vw,86px)", lineHeight: 0.95,
+          letterSpacing: "-0.035em", margin: "0 0 8px",
+        }}>
+          What Broke<span style={{ color: C.gray }}> & </span>Why
+        </h1>
+        <p style={{
+          fontFamily: "'IBM Plex Serif',serif", fontStyle: "italic",
+          fontSize: "clamp(16px,2vw,22px)", color: C.gray, margin: "0 0 44px", maxWidth: 620,
+        }}>
+          Practical lessons from reinforcement learning post-training
+        </p>
+
+        <EntropyHero />
+
+        <p style={{
+          fontFamily: "'IBM Plex Serif',serif", fontSize: "clamp(17px,2vw,21px)",
+          lineHeight: 1.6, color: C.paper, maxWidth: 660, margin: "40px 0 0",
+        }}>
+          That trace is Chapter 40 through 43. The entropy collapsed at step 30, then
+          exploded, then finally damped under Clip-Cov. Every published paper would have
+          shown you the last third.{" "}
+          <span style={{ color: C.held }}>This book is the whole line.</span>
+        </p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 36 }}>
+          <a href={DOI_URL} target="_blank" rel="noreferrer" style={{
+            background: C.paper, color: C.ink, padding: "14px 26px",
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 500, fontSize: 15,
+            textDecoration: "none", border: `1px solid ${C.paper}`,
+          }}>Read the book — free PDF</a>
+          <a href={REPO} target="_blank" rel="noreferrer" style={{
+            color: C.paper, padding: "14px 26px", border: `1px solid ${C.line}`,
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 500, fontSize: 15,
+            textDecoration: "none",
+          }}>Code & manifests</a>
+        </div>
+
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: 28, marginTop: 44,
+          paddingTop: 24, borderTop: `1px solid ${C.line}`,
+        }}>
+          {[["648", "pages"], ["157", "chapters"], ["1–8", "GPUs, start to finish"], ["CC BY 4.0", "free, forever"]].map(([v, l]) => (
+            <div key={l}>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 500 }}>{v}</div>
+              <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, color: C.gray, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </header>
+
+      {/* ── WHY ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={S.eyebrow}>Why this book exists</div>
+        <h2 style={S.h2}>The literature was vast, and useless to me.</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 40, marginTop: 28 }}>
+          <p style={S.body}>
+            The night the search agent's entropy collapsed at step 30, I had eight papers open in
+            eight tabs and a training run dying in the ninth. The textbook is a different kind of RL.
+            The alignment books are about a different judge. The papers each hold one piece — measured
+            on a model ten times the size of mine, on a cluster I did not have, with the failures
+            edited out.
+          </p>
+          <p style={S.body}>
+            Nothing sat at the intersection of all three constraints: reinforcement learning against a
+            program that checks your answer, on the hardware you actually have, told through the
+            failures instead of around them. So I wrote down the run — every number carrying an
+            evidence tag and a manifest path.
+          </p>
+        </div>
+        <div style={{
+          marginTop: 40, padding: "22px 24px", borderLeft: `2px solid ${C.held}`, background: C.ink2,
+        }}>
+          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 10, letterSpacing: "0.14em", color: C.held, marginBottom: 8 }}>THE STANCE</div>
+          <p style={{ ...S.body, color: C.paper, maxWidth: 720 }}>
+            Science publishes what worked. But in RL post-training, the failures are the curriculum.
+            The reward that pins at zero, the entropy that collapses then explodes, the eval that
+            lies — these teach more than any success, and they are precisely what the published
+            record omits.
+          </p>
+        </div>
+      </section>
+
+      {/* ── THE JOURNEY ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={S.eyebrow}>The journey · Parts I–VI</div>
+        <h2 style={S.h2}>Five programs. Five pivots.</h2>
+        <p style={{ ...S.body, marginBottom: 40 }}>
+          Not a topic list. Each program ended in a failure that forced the next one.
+          Read it once, in order.
+        </p>
+        <Journey />
+      </section>
+
+      {/* ── DECISION TREES ── */}
+      <DecisionTrees />
+
+      {/* ── SYMPTOM ROUTER ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={S.eyebrow}>The symptom router · Parts VIII–XV</div>
+        <h2 style={S.h2}>When your run breaks, don't search the contents.</h2>
+        <p style={{ ...S.body, marginBottom: 32 }}>
+          Read the signal on your dashboard, run the first check, and go. This is how half
+          the book is meant to be entered — by symptom, not by chapter.
+        </p>
+        <Router />
+      </section>
+
+      {/* ── DOCTRINE ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={S.eyebrow}>The doctrine timeline</div>
+        <h2 style={S.h2}>Eight failures that became rules.</h2>
+        <p style={{ ...S.body, marginBottom: 36 }}>Each one replaced a belief with a rule. None of it was planned.</p>
+        <div style={{ display: "grid", gap: 0 }}>
+          {DOCTRINE.map(([rule, ch], i) => (
+            <div key={rule} style={{
+              display: "grid", gridTemplateColumns: "36px 1fr auto", gap: 16,
+              alignItems: "baseline", padding: "16px 0",
+              borderBottom: i === DOCTRINE.length - 1 ? "none" : `1px solid ${C.line}`,
+            }}>
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: C.gray }}>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span style={{ fontFamily: "'IBM Plex Serif',serif", fontSize: 16, color: C.paper }}>{rule}</span>
+              <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: C.gray, whiteSpace: "nowrap" }}>{ch}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── WHO ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 40 }}>
+          <div>
+            <div style={S.eyebrow}>Who it's for</div>
+            <ul style={{ ...S.body, paddingLeft: 18, margin: 0 }}>
+              <li style={{ marginBottom: 10 }}>You are running RL post-training on one to eight GPUs, and it is not working.</li>
+              <li style={{ marginBottom: 10 }}>You want the algorithms — GRPO, DAPO, GSPO, Clip-Cov, on-policy distillation — with the operating knowledge attached.</li>
+              <li>You have been burned by a training-eval peak that didn't survive an honest eval.</li>
+            </ul>
+          </div>
+          <div>
+            <div style={S.eyebrow}>What it isn't</div>
+            <ul style={{ ...S.body, paddingLeft: 18, margin: 0 }}>
+              <li style={{ marginBottom: 10 }}>Not a from-scratch tutorial, and not a survey.</li>
+              <li style={{ marginBottom: 10 }}>Not about RLHF or DPO against a learned judge — this lives entirely in verifiable rewards.</li>
+              <li>Not frontier-scale. Every run here fit on an A100-40GB or an H100-80GB.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CITE ── */}
+      <section style={{ ...S.section, padding: "72px 24px", borderTop: `1px solid ${C.line}` }}>
+        <div style={S.eyebrow}>Cite it</div>
+        <div style={{
+          background: C.ink2, border: `1px solid ${C.line}`, padding: "20px 22px",
+          fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, lineHeight: 1.7,
+          color: C.gray, marginBottom: 14,
+        }}>
+          {cite}
+        </div>
+        <button onClick={copyCite} style={{
+          background: copied ? C.held : "none", color: copied ? C.ink : C.paper,
+          border: `1px solid ${copied ? C.held : C.line}`, padding: "11px 22px",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, cursor: "pointer",
+          transition: "all .2s",
+        }}>
+          {copied ? "Copied" : "Copy citation"}
+        </button>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{
+        ...S.section, padding: "48px 24px 72px", borderTop: `1px solid ${C.line}`,
+        display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "space-between", alignItems: "center",
+      }}>
+        <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: C.gray, lineHeight: 1.8 }}>
+          © 2026 Luv Verma · CC BY 4.0<br />
+          Share and adapt freely, with credit.
+        </div>
+        <div style={{ display: "flex", gap: 22 }}>
+          {[["GitHub", GH_PROFILE], ["Repository", REPO], ["Zenodo", DOI_URL]].map(([l, h]) => (
+            <a key={l} href={h} target="_blank" rel="noreferrer" style={{
+              fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, color: C.paper,
+              textDecoration: "none", borderBottom: `1px solid ${C.line}`, paddingBottom: 2,
+            }}>{l}</a>
+          ))}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(<BookLanding />);
+</script>
+</body>
+</html>
